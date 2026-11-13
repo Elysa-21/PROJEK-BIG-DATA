@@ -1,0 +1,10 @@
+{
+  "description": "Explore Gen Z social media habits and mental health trends with interactive analytics, respondent filters, insights, and a usage profile simulator for researchers.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

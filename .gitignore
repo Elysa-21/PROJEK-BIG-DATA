@@ -1,3 +1,11 @@
+node_modules/
+**/node_modules/
+__pycache__/
+server/dist/
+.env
+.env.*
+!.env.example
+
 genz-data-analysis/data/processed/data_cleaning.csv
 genz-data-analysis/data/raw/genz_social_media_usage_1M.csv
 genz-data-analysis/data/processed/data_cleaning.csv
