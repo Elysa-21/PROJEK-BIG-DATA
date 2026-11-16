@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { siInstagram, siSnapchat, siTiktok, siX, siYoutube } from "simple-icons";
 import {
@@ -1582,7 +1582,6 @@ export function CountriesPage() {
 const defaultProfile: SimulatorProfile = {
   age: 20,
   gender: "Female",
-  country: "India",
   platform: "TikTok",
   purpose: "Entertainment",
   dailyUsage: 4,
@@ -1591,47 +1590,6 @@ const defaultProfile: SimulatorProfile = {
   nightUsage: 1,
   beforeSleep: 30,
 };
-
-const simulatorFlags: Record<Country, string> = {
-  USA: "🇺🇸",
-  India: "🇮🇳",
-  Brazil: "🇧🇷",
-  UK: "🇬🇧",
-  Canada: "🇨🇦",
-  Australia: "🇦🇺",
-  Germany: "🇩🇪",
-};
-
-const presets: { label: string; profile: SimulatorProfile }[] = [
-  {
-    label: "Pelajar (Pendidikan)",
-    profile: { ...defaultProfile, age: 18, purpose: "Education", dailyUsage: 3, nightUsage: 0 },
-  },
-  {
-    label: "Aktif di malam hari",
-    profile: {
-      ...defaultProfile,
-      dailyUsage: 7,
-      platformsUsed: 5,
-      sessionMinutes: 38,
-      nightUsage: 1,
-      beforeSleep: 65,
-    },
-  },
-  {
-    label: "Pengguna seimbang",
-    profile: {
-      ...defaultProfile,
-      platform: "YouTube",
-      purpose: "Education",
-      dailyUsage: 2,
-      platformsUsed: 2,
-      sessionMinutes: 14,
-      nightUsage: 0,
-      beforeSleep: 10,
-    },
-  },
-];
 
 type WhatIfKey = "night" | "oneHour" | "twoHours" | "sleep" | "platform" | "education";
 
@@ -1742,7 +1700,7 @@ function ChipGroup<T extends string>({
   return (
     <fieldset className="sim-chip-group">
       <legend>
-        <HelpLabel label={label} help={help} value={value} />
+        <HelpLabel label={label} help={help} value={labelId(value)} />
       </legend>
       <div>
         {values.map((item) => (
@@ -1754,7 +1712,7 @@ function ChipGroup<T extends string>({
             onClick={() => onChange(item)}
           >
             {platformStyle && <PlatformMark platform={item as Platform} size={20} />}
-            {item}
+            {labelId(item)}
           </button>
         ))}
       </div>
@@ -2010,10 +1968,8 @@ export function SimulatorPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [drawer, setDrawer] = useState(false);
-  const [touched, setTouched] = useState(false);
   const [activeWhatIfs, setActiveWhatIfs] = useState<WhatIfKey[]>([]);
   const runId = useRef(0);
-  const suppressAutoRun = useRef(false);
 
   const execute = (nextProfile = profile) => {
     const id = ++runId.current;
@@ -2031,28 +1987,12 @@ export function SimulatorPage() {
     }, 500);
   };
 
-  useEffect(() => {
-    if (!touched) return;
-    if (suppressAutoRun.current) {
-      suppressAutoRun.current = false;
-      return;
-    }
-    const timer = window.setTimeout(() => execute(profile), 400);
-    return () => window.clearTimeout(timer);
-  }, [profile, touched, filtered]);
-
   const update = (next: SimulatorProfile) => {
     setProfile(next);
-    setTouched(true);
-  };
-  const resetProfile = () => {
-    runId.current += 1;
-    setProfile(defaultProfile);
     setResult(null);
-    setTouched(false);
     setLoading(false);
     setError(false);
-    setActiveWhatIfs([]);
+    runId.current += 1;
   };
   const comparisons = activeWhatIfs.map((key) => {
     const option = whatIfOptions.find((item) => item.key === key)!;
@@ -2084,22 +2024,10 @@ export function SimulatorPage() {
               <p>Pilih opsi yang paling mendekati kebiasaan Anda.</p>
             </div>
           </div>
-          <div className="preset-row">
-            <span>Preset cepat</span>
-            <div>
-              {presets.map((preset) => (
-                <button type="button" key={preset.label} onClick={() => update(preset.profile)}>
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </div>
           <form
             className="sim-form"
             onSubmit={(event) => {
               event.preventDefault();
-              if (!touched) suppressAutoRun.current = true;
-              setTouched(true);
               execute();
             }}
           >
@@ -2114,27 +2042,10 @@ export function SimulatorPage() {
             <ChipGroup<Gender>
               label="Gender"
               help="Digunakan sebagai faktor pencocokan ringan."
-              values={["Male", "Female", "Other"]}
+              values={["Male", "Female"]}
               value={profile.gender}
               onChange={(gender) => update({ ...profile, gender })}
             />
-            <label className="sim-select">
-              <HelpLabel
-                label="Negara"
-                help="Digunakan sebagai faktor pencocokan ringan."
-                value={`${simulatorFlags[profile.country]} ${profile.country}`}
-              />
-              <select
-                value={profile.country}
-                onChange={(event) => update({ ...profile, country: event.target.value as Country })}
-              >
-                {countries.map((country) => (
-                  <option key={country} value={country}>
-                    {simulatorFlags[country]} {country}
-                  </option>
-                ))}
-              </select>
-            </label>
             <ChipGroup<Platform>
               label="Platform utama"
               help="Platform yang paling sering Anda gunakan."
@@ -2224,9 +2135,6 @@ export function SimulatorPage() {
             <div className="sim-actions">
               <button className="primary-button" type="submit">
                 <Icon name="sparkle" size={15} /> Jalankan Simulasi
-              </button>
-              <button className="ghost-button" type="button" onClick={resetProfile}>
-                <Icon name="reset" size={14} /> Atur Ulang Profil
               </button>
             </div>
           </form>

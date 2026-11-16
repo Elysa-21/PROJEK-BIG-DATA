@@ -3,7 +3,6 @@ import {
   percentile,
   stdDev as calculateStdDev,
   type Addiction,
-  type Country,
   type Gender,
   type Platform,
   type Purpose,
@@ -13,7 +12,6 @@ import {
 export interface SimulatorProfile {
   age: number;
   gender: Gender;
-  country: Country;
   platform: Platform;
   purpose: Purpose;
   dailyUsage: number;
@@ -52,7 +50,6 @@ const weights = {
   age: 0.06,
   platform: 0.12,
   purpose: 0.1,
-  country: 0.06,
   gender: 0.04,
 } as const;
 
@@ -110,7 +107,6 @@ export function runSimulation(profile: SimulatorProfile, records: RecordData[]):
             squaredDifference(profileNumeric.age, normalize(record.age, numericRanges.age)) +
           (record.primary_platform !== profile.platform ? weights.platform : 0) +
           (record.purpose !== profile.purpose ? weights.purpose : 0) +
-          (record.country !== profile.country ? weights.country : 0) +
           (record.gender !== profile.gender ? weights.gender : 0),
       );
       return { record, distance };
