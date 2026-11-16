@@ -632,13 +632,11 @@ function ModeToggle({
 
 function DistributionChart({
   title,
-  help,
   data,
   type = "bar",
   total,
 }: {
   title: string;
-  help: string;
   data: { name: string; value: number }[];
   type?: "bar" | "donut";
   total: number;
@@ -654,9 +652,6 @@ function DistributionChart({
       title={title}
       action={
         <div className="chart-actions">
-          <span className="help" title={help}>
-            ?
-          </span>
           <ModeToggle mode={mode} setMode={setMode} />
         </div>
       }
@@ -761,7 +756,6 @@ export function DistributionPage() {
       <div className="chart-grid">
         <DistributionChart
           title="Usia"
-          help="Jumlah responden pada setiap rentang usia."
           data={
             unfiltered
               ? groupedHistogram(ageDistribution, 7)
@@ -771,7 +765,6 @@ export function DistributionPage() {
         />
         <DistributionChart
           title="Durasi Penggunaan Harian"
-          help="Distribusi waktu penggunaan media sosial per hari."
           data={
             unfiltered
               ? summaryHistogram(dailyUsageDistribution)
@@ -781,7 +774,6 @@ export function DistributionPage() {
         />
         <DistributionChart
           title="Gender"
-          help="Komposisi gender berdasarkan laporan responden."
           data={
             unfiltered
               ? orderedSummaryCounts(genderDistribution, ["Male", "Female"])
@@ -792,7 +784,6 @@ export function DistributionPage() {
         />
         <DistributionChart
           title="Tujuan Utama"
-          help="Alasan utama responden menggunakan media sosial."
           data={
             unfiltered
               ? orderedSummaryCounts(purposeDistribution, purposes)
@@ -802,7 +793,6 @@ export function DistributionPage() {
         />
         <DistributionChart
           title="Tingkat Kebiasaan"
-          help="Distribusi kategori kebiasaan berdasarkan pola penggunaan."
           data={
             unfiltered
               ? orderedSummaryCounts(addictionDistribution, addictions)
@@ -813,7 +803,6 @@ export function DistributionPage() {
         />
         <DistributionChart
           title="Skor Kesehatan Mental"
-          help="Distribusi skor kesejahteraan berdasarkan laporan mandiri."
           data={
             unfiltered
               ? summaryHistogram(mentalScoreDistribution)
@@ -2623,7 +2612,14 @@ export function AboutPage() {
             </span>
             <h2>Dataset Penggunaan Media Sosial Gen-Z</h2>
             <p>
-              Sumber: <code>https://www.kaggle.com/datasets/sharmajicoder/gen-z-social-media-usage-dataset</code>
+              Sumber: {" "}
+              <a
+                href="https://www.kaggle.com/datasets/sharmajicoder/gen-z-social-media-usage-dataset"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Dataset Gen Z Social Media Usage di Kaggle
+              </a>
             </p>
           </div>
           <dl>
