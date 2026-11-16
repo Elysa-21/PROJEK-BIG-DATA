@@ -989,7 +989,7 @@ export function CorrelationPage() {
     >
       <div className="correlation-grid">
         <ChartCard
-          title="Penjelajah Hubungan"
+          title="Pola Hubungan Antarvariabel"
           subtitle={`Korelasi Pearson: ${r.toFixed(3)}`}
           action={
             <select value={xKey} onChange={(e) => setXKey(e.target.value as typeof xKey)}>
@@ -1043,7 +1043,7 @@ export function CorrelationPage() {
           </div>
         </ChartCard>
         <ChartCard
-          title="Peta Panas Korelasi"
+          title="Matriks Korelasi Antarindikator"
           subtitle="Arahkan kursor ke sel untuk melihat nilai Pearson."
         >
           <div className="heatmap">
