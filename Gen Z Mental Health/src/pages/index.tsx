@@ -2658,7 +2658,6 @@ const dictionary = [
 ];
 
 export function AboutPage() {
-  const { errorMode, setErrorMode } = useFilters();
   const { summaries, samples } = useDashboardData();
   const totalRecords = summaryValue<{ total_respondents: number }>(
     summaries,
@@ -2768,21 +2767,6 @@ export function AboutPage() {
                 <strong>Perhitungan hybrid</strong>Grafik memakai summary atau sampel sesuai filter.
               </span>
             </div>
-          </div>
-        </ChartCard>
-        <ChartCard title="Diagnostik Prototipe" subtitle="Kontrol khusus pengembangan.">
-          <div className="dev-toggle">
-            <div>
-              <strong>Simulasikan kesalahan aplikasi</strong>
-              <p>Kontrol diagnostik untuk menguji tampilan kesalahan.</p>
-            </div>
-            <button
-              className={errorMode ? "active" : ""}
-              onClick={() => setErrorMode(!errorMode)}
-              aria-pressed={errorMode}
-            >
-              <i />
-            </button>
           </div>
         </ChartCard>
       </div>
