@@ -2589,6 +2589,18 @@ input[type="range"] {
 .sim-confidence {
   margin-top: 17px;
 }
+.sim-confidence-title {
+  display: block;
+  margin-bottom: 4px;
+  color: #343a54;
+  font-size: 9px;
+}
+.sim-stat-explanation {
+  margin: 0 0 8px;
+  color: #7b839b;
+  font-size: 7px;
+  line-height: 1.5;
+}
 .confidence-segments {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2639,6 +2651,9 @@ input[type="range"] {
   display: block;
   color: #343a54;
   font-size: 11px;
+}
+.sim-stat-explanation {
+  margin-top: 7px;
 }
 .friendly-copy {
   margin-top: 14px;
@@ -3622,6 +3637,7 @@ html[data-theme="dark"] .filter-group legend,
 html[data-theme="dark"] .sim-field-label,
 html[data-theme="dark"] .sim-stepper > span,
 html[data-theme="dark"] .sim-subhead strong,
+html[data-theme="dark"] .sim-confidence-title,
 html[data-theme="dark"] .comparison-title > span,
 html[data-theme="dark"] .impact-chart span {
   color: #c4cae0;
@@ -3634,6 +3650,7 @@ html[data-theme="dark"] .score-range-block > p,
 html[data-theme="dark"] .score-scale,
 html[data-theme="dark"] .habit-level span,
 html[data-theme="dark"] .sim-confidence p,
+html[data-theme="dark"] .sim-stat-explanation,
 html[data-theme="dark"] .sample-note,
 html[data-theme="dark"] .sim-disclaimer {
   color: #9ca4bd;

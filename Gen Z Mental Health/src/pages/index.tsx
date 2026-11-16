@@ -1783,8 +1783,8 @@ function DotGrid({ result }: { result: SimulationResult }) {
   return (
     <div className="sim-dot-block">
       <div className="sim-subhead">
-        <strong>Dari {result.neighborCount} orang serupa</strong>
-        <span>Setiap titik mewakili satu profil</span>
+        <strong>Tingkat adiksi pada {result.neighborCount} profil terdekat</strong>
+        <span>1 titik = 1 responden</span>
       </div>
       <div
         className="sim-dot-grid"
@@ -1819,6 +1819,7 @@ function ConfidenceMeter({ result }: { result: SimulationResult }) {
   };
   return (
     <div className="sim-confidence">
+      <strong className="sim-confidence-title">Keandalan perkiraan</strong>
       <div className="confidence-segments">
         {(["Low", "Medium", "High"] as const).map((level) => (
           <span
@@ -1908,15 +1909,24 @@ function ResultContent({
       <ConfidenceMeter result={result} />
       <div className="sim-stat-row">
         <span>
-          Profil cocok<strong>{result.neighborCount}</strong>
+          Jumlah profil pembanding<strong>{result.neighborCount} orang</strong>
         </span>
         <span>
-          Rata-rata kecocokan<strong>{match.toFixed(0)}%</strong>
+          Kedekatan profil rata-rata<strong>{match.toFixed(0)}%</strong>
         </span>
         <span>
-          Skor median<strong>{result.median.toFixed(1)}</strong>
+          Median skor kesehatan<strong>{result.median.toFixed(1)} / 10</strong>
         </span>
       </div>
+      <p className="sim-stat-explanation">
+        Grafik menunjukkan {result.neighborCount} responden dengan profil paling mirip dengan Anda;
+        setiap titik mewakili satu orang dan warnanya menunjukkan tingkat adiksi media sosial mereka.
+        Kedekatan {match.toFixed(0)}% adalah ukuran kemiripan profil, bukan peluang hasil. Keandalan
+        {` ${labelId(result.confidence).toLowerCase()} `}menunjukkan seberapa konsisten perkiraan dari
+        responden pembanding. Median {result.median.toFixed(1)} dari 10 adalah nilai tengah skor
+        kesehatan mental mereka (skor lebih tinggi berarti lebih baik). Hasil ini menggambarkan
+        kelompok, bukan diagnosis atau ramalan pribadi.
+      </p>
       <div className="friendly-copy">
         <Icon name="sparkle" size={16} />
         <p>
