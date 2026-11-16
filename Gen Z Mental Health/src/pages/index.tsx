@@ -2682,8 +2682,7 @@ export function AboutPage() {
             </span>
             <h2>Dataset Penggunaan Media Sosial Gen-Z</h2>
             <p>
-              Sumber: tabel MySQL <code>data_genz.genz_social_media_usage_1m</code>; ringkasan dan
-              sampel disajikan dari MongoDB.
+              Sumber: <code>https://www.kaggle.com/datasets/sharmajicoder/gen-z-social-media-usage-dataset</code>
             </p>
           </div>
           <dl>
