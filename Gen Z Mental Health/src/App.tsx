@@ -96,7 +96,7 @@ function Topbar({
     window.localStorage.setItem("genz-pulse-avatar", value);
   };
   return (
-    <header className={`topbar ${showSearch ? "glass-card" : "topbar-compact"}`}>
+    <header className={showSearch ? "topbar glass-card" : "topbar glass-card topbar-no-search"}>
       {showSearch && (
         <form
           className="global-search"
@@ -225,7 +225,7 @@ function AppRoutes() {
         <Topbar
           theme={theme}
           toggleTheme={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
-          showSearch={location.pathname !== "/overview"}
+          showSearch={location.pathname === "/explorer"}
         />
         <div className="route-content" key={location.pathname}>
           {status === "loading" ? (

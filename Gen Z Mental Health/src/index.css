@@ -244,7 +244,7 @@ main {
   justify-content: space-between;
   border-radius: 17px;
 }
-.topbar-compact .top-actions {
+.topbar-no-search .top-actions {
   margin-left: auto;
 }
 .global-search {
@@ -532,7 +532,7 @@ body::after {
   color: var(--coral);
   background: rgba(240, 106, 79, 0.12);
 }
-.topbar:not(.topbar-compact),
+.topbar,
 .overview-hero,
 .filter-panel,
 .chart-card,
@@ -784,7 +784,7 @@ html[data-theme="dark"] .api-state span {
   color: #b8b3ad;
 }
 html[data-theme="dark"] .glass-card,
-html[data-theme="dark"] .topbar:not(.topbar-compact),
+html[data-theme="dark"] .topbar,
 html[data-theme="dark"] .chart-card,
 html[data-theme="dark"] .kpi,
 html[data-theme="dark"] .overview-hero,
