@@ -687,10 +687,27 @@ function DistributionChart({
               <Legend iconType="circle" wrapperStyle={{ fontSize: 9 }} />
             </PieChart>
           ) : (
-            <BarChart data={display} margin={{ top: 15, left: -24, right: 7, bottom: 5 }}>
+            <BarChart data={display} margin={{ top: 20, left: -18, right: 7, bottom: 32 }}>
               <CartesianGrid strokeDasharray="4 5" vertical={false} stroke="#8c91aa22" />
-              <XAxis dataKey="name" tick={{ fontSize: 8 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 8 }} axisLine={false} tickLine={false} />
+              <XAxis
+                dataKey="name"
+                interval={0}
+                angle={-35}
+                textAnchor="end"
+                height={48}
+                tick={{ fontSize: 8 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                domain={mode === "Percentage" ? [0, 100] : [0, "auto"]}
+                tickFormatter={(value) =>
+                  mode === "Percentage" ? `${Number(value).toFixed(0)}%` : value
+                }
+                tick={{ fontSize: 8 }}
+                axisLine={false}
+                tickLine={false}
+              />
               <Tooltip {...tooltipStyle} />
               <Bar dataKey="shown" radius={[5, 5, 0, 0]} fill={chartColors.indigo}>
                 {display.map((item, index) => (
@@ -767,8 +784,8 @@ export function DistributionPage() {
           help="Komposisi gender berdasarkan laporan responden."
           data={
             unfiltered
-              ? orderedSummaryCounts(genderDistribution, ["Male", "Female", "Other"])
-              : countData(filtered, "gender", ["Male", "Female", "Other"])
+              ? orderedSummaryCounts(genderDistribution, ["Male", "Female"])
+              : countData(filtered, "gender", ["Male", "Female"])
           }
           type="donut"
           total={total}
