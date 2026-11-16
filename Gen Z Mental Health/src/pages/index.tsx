@@ -520,22 +520,6 @@ export function OverviewPage() {
           </GlassCard>
         </div>
         <div className="overview-side">
-          <ChartCard title="Filter Cepat" subtitle="Pilih kelompok hanya dengan satu klik.">
-            <div className="quick-buttons">
-              <button onClick={() => setFilters((state) => ({ ...state, night: "Yes" }))}>
-                <Icon name="moon" size={16} /> Pengguna Malam
-              </button>
-              <button onClick={() => setFilters((state) => ({ ...state, addiction: ["High"] }))}>
-                <Icon name="alert" size={16} /> Pola Risiko Tinggi
-              </button>
-              <button onClick={() => setFilters((state) => ({ ...state, purpose: ["Education"] }))}>
-                <Icon name="brain" size={16} /> Tujuan Pendidikan
-              </button>
-              <button onClick={reset}>
-                <Icon name="reset" size={16} /> Atur Ulang
-              </button>
-            </div>
-          </ChartCard>
           <ChartCard title="Ringkasan Kebiasaan" subtitle="Kelompok yang sedang ditampilkan.">
             <div className="donut-layout">
               <ResponsiveContainer width={145} height={145}>
