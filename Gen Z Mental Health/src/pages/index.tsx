@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { siInstagram, siSnapchat, siTiktok, siX, siYoutube } from "simple-icons";
 import {
@@ -2344,7 +2344,8 @@ const explorerColumns = [
 export function ExplorerPage() {
   const { filtered } = useFilters();
   const [searchParams] = useSearchParams();
-  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const searchQuery = searchParams.get("search") || "";
+  const [search, setSearch] = useState(searchQuery);
   const [sort, setSort] = useState<keyof RecordData>("id");
   const [ascending, setAscending] = useState(true);
   const [page, setPage] = useState(1);
@@ -2352,6 +2353,12 @@ export function ExplorerPage() {
   const [visible, setVisible] = useState<(keyof RecordData)[]>(explorerColumns.map(([key]) => key));
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [selected, setSelected] = useState<RecordData | null>(null);
+
+  useEffect(() => {
+    setSearch(searchQuery);
+    setPage(1);
+  }, [searchQuery]);
+
   const shown = [...filtered]
     .filter((row) => Object.values(row).join(" ").toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {

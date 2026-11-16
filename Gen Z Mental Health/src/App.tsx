@@ -109,7 +109,7 @@ function Topbar({
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Cari negara, platform, atau responden..."
+            placeholder="Cari negara, platform, atau gender..."
             aria-label="Pencarian global"
           />
         </form>
