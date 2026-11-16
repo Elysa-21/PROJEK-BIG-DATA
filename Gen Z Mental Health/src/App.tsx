@@ -73,7 +73,15 @@ function Sidebar() {
 
 type Theme = "light" | "dark";
 
-function Topbar({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void }) {
+function Topbar({
+  theme,
+  toggleTheme,
+  showSearch,
+}: {
+  theme: Theme;
+  toggleTheme: () => void;
+  showSearch: boolean;
+}) {
   const { status, lastUpdated } = useDashboardData();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -88,22 +96,24 @@ function Topbar({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void 
     window.localStorage.setItem("genz-pulse-avatar", value);
   };
   return (
-    <header className="topbar glass-card">
-      <form
-        className="global-search"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (search.trim()) navigate(`/explorer?search=${encodeURIComponent(search.trim())}`);
-        }}
-      >
-        <Icon name="search" size={17} />
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Cari negara, platform, atau responden..."
-          aria-label="Pencarian global"
-        />
-      </form>
+    <header className={`topbar ${showSearch ? "glass-card" : "topbar-compact"}`}>
+      {showSearch && (
+        <form
+          className="global-search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (search.trim()) navigate(`/explorer?search=${encodeURIComponent(search.trim())}`);
+          }}
+        >
+          <Icon name="search" size={17} />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Cari negara, platform, atau responden..."
+            aria-label="Pencarian global"
+          />
+        </form>
+      )}
       <div className="top-actions">
         <div className={`api-state ${status}`} role="status">
             <span>
@@ -215,6 +225,7 @@ function AppRoutes() {
         <Topbar
           theme={theme}
           toggleTheme={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
+          showSearch={location.pathname !== "/overview"}
         />
         <div className="route-content" key={location.pathname}>
           {status === "loading" ? (
