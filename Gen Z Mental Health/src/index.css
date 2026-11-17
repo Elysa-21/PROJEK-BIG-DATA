@@ -247,6 +247,29 @@ main {
 .topbar-no-search .top-actions {
   margin-left: auto;
 }
+.topbar-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: inherit;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.topbar-context svg {
+  flex: 0 0 auto;
+  color: var(--coral);
+}
+.topbar-context > span:first-of-type,
+.topbar-context-separator {
+  opacity: 0.65;
+}
+.topbar-context strong {
+  overflow: hidden;
+  color: inherit;
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
 .global-search {
   width: min(430px, 52%);
   height: 42px;

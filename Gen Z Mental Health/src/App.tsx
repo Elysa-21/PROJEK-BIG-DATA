@@ -76,10 +76,12 @@ type Theme = "light" | "dark";
 function Topbar({
   theme,
   toggleTheme,
+  pageTitle,
   showSearch,
 }: {
   theme: Theme;
   toggleTheme: () => void;
+  pageTitle: string;
   showSearch: boolean;
 }) {
   const { status, lastUpdated } = useDashboardData();
@@ -97,6 +99,14 @@ function Topbar({
   };
   return (
     <header className={showSearch ? "topbar glass-card" : "topbar glass-card topbar-no-search"}>
+      <div className="topbar-context" aria-label={`GenZ Pulse / ${pageTitle}`}>
+        <Icon name="pulse" size={15} />
+        <span>GenZ Pulse</span>
+        <span className="topbar-context-separator" aria-hidden="true">
+          /
+        </span>
+        <strong>{pageTitle}</strong>
+      </div>
       {showSearch && (
         <form
           className="global-search"
@@ -205,6 +215,7 @@ function NotFound() {
 function AppRoutes() {
   const location = useLocation();
   const { samples, status, error, retry } = useDashboardData();
+  const pageTitle = navigation.find((item) => item.path === location.pathname)?.label ?? "Dashboard";
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = window.localStorage.getItem("genz-pulse-theme");
     if (saved === "light" || saved === "dark") return saved;
@@ -225,6 +236,7 @@ function AppRoutes() {
         <Topbar
           theme={theme}
           toggleTheme={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
+          pageTitle={pageTitle}
           showSearch={location.pathname === "/explorer"}
         />
         <div className="route-content" key={location.pathname}>
