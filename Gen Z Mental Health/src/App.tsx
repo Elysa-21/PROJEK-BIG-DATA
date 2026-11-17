@@ -84,10 +84,15 @@ function Topbar({
   pageTitle: string;
   showSearch: boolean;
 }) {
-  const { status, lastUpdated } = useDashboardData();
+  const { status } = useDashboardData();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
   const avatars = ["🐰", "🦁", "🐱", "🐻", "🐼", "🦊", "🐨", "🐯"];
   const [avatar, setAvatar] = useState(
     () => window.localStorage.getItem("genz-pulse-avatar") || "🐼",
@@ -136,12 +141,15 @@ function Topbar({
                     : "Loading"}
             </span>
           <small>
-            Terakhir update:{" "}
-            {lastUpdated
-              ? new Date(lastUpdated).toLocaleString("id-ID")
-              : status === "error"
-                ? "tidak tersedia"
-                : "memuat"}
+            {now.toLocaleString("id-ID", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false,
+            })}
           </small>
         </div>
         <button
