@@ -1734,6 +1734,34 @@ function FinalModelResultContent({
         loading={whatIfLoading}
         error={whatIfError}
       />
+      <section className="simulator-interpretation" aria-labelledby="simulator-interpretation-title">
+        <Icon name="info" size={17} />
+        <div>
+          <h3 id="simulator-interpretation-title">Cara membaca hasil ini</h3>
+          <p>
+            <strong>Tingkat adiksi {labelId(result.addiction_level)}</strong> adalah kategori yang
+            diprediksi Random Forest dari profil penggunaan yang dimasukkan. Probabilitas kategori
+            menunjukkan keyakinan model dalam memilih kategori tersebut, bukan persentase diagnosis
+            klinis.
+          </p>
+          <p>
+            <strong>Skor kesehatan mental {score.toFixed(1)}/10</strong> diprediksi secara terpisah
+            oleh Linear Regression. Pada skala data ini, skor lebih rendah berarti skor kesehatan
+            mental yang diprediksi lebih rendah, sedangkan skor lebih tinggi berarti lebih baik.
+          </p>
+          <p>
+            Jika kategori adiksi tinggi muncul bersama skor kesehatan mental yang rendah, keduanya
+            menunjukkan pola yang selaras: adiksi diprediksi tinggi dan skor kesehatan mental
+            diprediksi rendah. Hasil ini dapat menjadi pengingat untuk memperhatikan kebiasaan
+            penggunaan dan kesejahteraan diri, tetapi tidak membuktikan bahwa kecanduan secara
+            langsung menyebabkan kondisi kesehatan mental tersebut.
+          </p>
+          <p>
+            Kedua hasil berasal dari model statistik dan bukan diagnosis atau penilaian profesional.
+            Faktor lain yang tidak ada dalam data juga dapat memengaruhi kesehatan mental.
+          </p>
+        </div>
+      </section>
       <div className="friendly-copy">
         <Icon name="sparkle" size={16} />
         <p>

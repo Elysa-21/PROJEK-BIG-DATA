@@ -2689,6 +2689,38 @@ input[type="range"] {
 .sim-stat-explanation {
   margin-top: 7px;
 }
+.simulator-interpretation {
+  margin-top: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #505b71;
+  border: 1px solid rgba(91, 105, 145, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.48);
+}
+.simulator-interpretation > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #278f8b;
+}
+.simulator-interpretation h3 {
+  margin: 0 0 6px;
+  color: #343a54;
+  font-size: 12px;
+}
+.simulator-interpretation p {
+  margin: 6px 0 0;
+  font-size: 10px;
+  line-height: 1.65;
+}
+.simulator-interpretation p:first-of-type {
+  margin-top: 0;
+}
+.simulator-interpretation strong {
+  color: #343a54;
+}
 .friendly-copy {
   margin-top: 14px;
   padding: 12px;
@@ -3734,6 +3766,18 @@ html[data-theme="dark"] .detail-list div {
 html[data-theme="dark"] .friendly-copy {
   color: #b9aeff;
   background: rgba(124, 92, 250, 0.12);
+}
+html[data-theme="dark"] .simulator-interpretation {
+  color: #c2c7db;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+}
+html[data-theme="dark"] .simulator-interpretation h3,
+html[data-theme="dark"] .simulator-interpretation strong {
+  color: #eff1fb;
+}
+html[data-theme="dark"] .simulator-interpretation > svg {
+  color: #79d6d1;
 }
 html[data-theme="dark"] .friendly-copy p {
   color: #c2c7db;
