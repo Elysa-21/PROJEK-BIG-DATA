@@ -19,3 +19,7 @@ logs/
 # beside it.
 /.plugins/
 /.opencode-skills/
+
+ml/.pytest_cache/
+ml/__pycache__/
+ml/tests/__pycache__/

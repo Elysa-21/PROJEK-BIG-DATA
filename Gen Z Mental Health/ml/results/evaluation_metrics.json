@@ -1,0 +1,85 @@
+{
+  "trained_at": "2026-11-25T04:54:26.828227+00:00",
+  "source_table": "genz_social_media_usage_1m",
+  "source_rows": 1000000,
+  "valid_rows": 1000000,
+  "dropped_rows": 0,
+  "train_rows": 800000,
+  "test_rows": 200000,
+  "test_ratio": 0.2,
+  "random_state": 42,
+  "features": [
+    "gender",
+    "country",
+    "primary_platform",
+    "purpose",
+    "age",
+    "num_platforms_used",
+    "daily_usage_hours",
+    "avg_session_minutes",
+    "night_usage",
+    "screen_time_before_sleep"
+  ],
+  "targets": [
+    "addiction_level",
+    "mental_health_score"
+  ],
+  "classifier": "RandomForestClassifier",
+  "regressor": "LinearRegression",
+  "target_definition_audit": {
+    "feature_checked": "daily_usage_hours",
+    "training_ranges_by_addiction_level": [
+      {
+        "label": "Low",
+        "minimum": 0.5,
+        "maximum": 2.499992654035618
+      },
+      {
+        "label": "Medium",
+        "minimum": 2.5000031081312395,
+        "maximum": 4.99999528094028
+      },
+      {
+        "label": "High",
+        "minimum": 5.000015070559975,
+        "maximum": 10.0
+      }
+    ],
+    "ranges_are_non_overlapping": true,
+    "note": "Non-overlapping usage ranges indicate the source addiction labels may be rule-derived from daily usage; classification metrics should not be read as clinical predictive performance."
+  },
+  "classification_metrics": {
+    "accuracy": 1.0,
+    "balanced_accuracy": 1.0,
+    "precision_macro": 1.0,
+    "recall_macro": 1.0,
+    "f1_macro": 1.0,
+    "labels": [
+      "Low",
+      "Medium",
+      "High"
+    ],
+    "confusion_matrix": [
+      [
+        50244,
+        0,
+        0
+      ],
+      [
+        0,
+        117969,
+        0
+      ],
+      [
+        0,
+        0,
+        31787
+      ]
+    ]
+  },
+  "regression_metrics": {
+    "mae": 0.7821794187519031,
+    "rmse": 0.976300266586713,
+    "r2": 0.5809000261187751
+  }
+}

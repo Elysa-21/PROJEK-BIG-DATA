@@ -41,6 +41,10 @@ react(),
           target: process.env.API_PROXY_TARGET || 'http://localhost:3001',
           changeOrigin: true,
         },
+        '/ml': {
+          target: process.env.ML_API_PROXY_TARGET || 'http://localhost:8000',
+          changeOrigin: true,
+        },
       },
       watch: {
         ignored: [
@@ -94,7 +98,7 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
     return html.replace(`<!-- ${slotName} -->`, content)
   }
 
-  const title = config.title ?? "Figma Make App"
+  const title = config.title ?? "GEN-Z PULSE"
   const description = config.description ?? ''
   // Imported HTML keeps its own favicon. New Makes use PNG because Google Search does not
   // support SVG favicons, even though browsers do.

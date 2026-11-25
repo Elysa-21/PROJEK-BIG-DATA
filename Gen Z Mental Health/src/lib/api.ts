@@ -71,6 +71,48 @@ export async function fetchSummary(type: string): Promise<SummaryDocument> {
   return requestJson<SummaryDocument>(`/api/summary/${encodeURIComponent(type)}`);
 }
 
+function parseSampleNumber(value: unknown, field: string, rowIndex: number): number {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim() !== ""
+        ? Number(value)
+        : Number.NaN;
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`Sample ${rowIndex + 1} has an invalid numeric field: ${field}.`);
+  }
+  return parsed;
+}
+
+function normalizeSamples(samples: RecordData[]): RecordData[] {
+  if (!Array.isArray(samples)) {
+    throw new Error("Dashboard samples response must be an array.");
+  }
+
+  return samples.map((sample, index) => {
+    const nightUsage = parseSampleNumber(sample.night_usage, "night_usage", index);
+    if (nightUsage !== 0 && nightUsage !== 1) {
+      throw new Error(`Sample ${index + 1} has an invalid numeric field: night_usage.`);
+    }
+
+    return {
+      ...sample,
+      id: parseSampleNumber(sample.id, "id", index),
+      age: parseSampleNumber(sample.age, "age", index),
+      num_platforms_used: parseSampleNumber(sample.num_platforms_used, "num_platforms_used", index),
+      daily_usage_hours: parseSampleNumber(sample.daily_usage_hours, "daily_usage_hours", index),
+      avg_session_minutes: parseSampleNumber(sample.avg_session_minutes, "avg_session_minutes", index),
+      night_usage: nightUsage,
+      screen_time_before_sleep: parseSampleNumber(
+        sample.screen_time_before_sleep,
+        "screen_time_before_sleep",
+        index,
+      ),
+      mental_health_score: parseSampleNumber(sample.mental_health_score, "mental_health_score", index),
+    };
+  });
+}
+
 export function DashboardDataProvider({ children }: { children: ReactNode }) {
   const [summaries, setSummaries] = useState<DashboardSummaries>({});
   const [samples, setSamples] = useState<RecordData[]>([]);
@@ -89,6 +131,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         requestJson<DashboardSummaries>("/api/summary"),
         requestJson<RecordData[]>("/api/samples"),
       ]);
+      const normalizedSamples = normalizeSamples(nextSamples);
       if (!Object.keys(nextSummaries).length) {
         throw new Error("MongoDB has no dashboard summaries yet. Run build_summary.py first.");
       }
@@ -96,11 +139,11 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
       if (missingSummaries.length) {
         throw new Error(`Missing dashboard summaries: ${missingSummaries.join(", ")}.`);
       }
-      if (!nextSamples.length) {
+      if (!normalizedSamples.length) {
         throw new Error("MongoDB has no dashboard samples yet. Run build_summary.py first.");
       }
       setSummaries(nextSummaries);
-      setSamples(nextSamples);
+      setSamples(normalizedSamples);
       setStatus("reconnecting");
 
       const stream = new EventSource("/api/stream");

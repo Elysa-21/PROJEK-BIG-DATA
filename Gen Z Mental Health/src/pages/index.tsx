@@ -44,8 +44,6 @@ import {
 } from "../data/data";
 import { useDashboardData, type DashboardSummaries } from "../lib/api";
 import {
-  runSimulation,
-  simulatorWeights,
   type SimulationResult,
   type SimulatorProfile,
 } from "../lib/simulator";
@@ -851,11 +849,11 @@ export function DistributionPage() {
                     <td>
                       <strong>{label}</strong>
                     </td>
-                    <td>{stats.average.toFixed(2)}</td>
-                    <td>{stats.median.toFixed(2)}</td>
-                    <td>{stats.minimum.toFixed(2)}</td>
-                    <td>{stats.maximum.toFixed(2)}</td>
-                    <td>{stats.standard_deviation.toFixed(2)}</td>
+                    <td>{Number(stats.average).toFixed(2)}</td>
+                    <td>{Number(stats.median).toFixed(2)}</td>
+                    <td>{Number(stats.minimum).toFixed(2)}</td>
+                    <td>{Number(stats.maximum).toFixed(2)}</td>
+                    <td>{Number(stats.standard_deviation).toFixed(2)}</td>
                   </tr>
                 );
               })}
@@ -1571,6 +1569,7 @@ export function CountriesPage() {
 const defaultProfile: SimulatorProfile = {
   age: 20,
   gender: "Female",
+  country: "USA",
   platform: "TikTok",
   purpose: "Entertainment",
   dailyUsage: 4,
@@ -1579,6 +1578,172 @@ const defaultProfile: SimulatorProfile = {
   nightUsage: 1,
   beforeSleep: 30,
 };
+
+interface FinalModelPrediction {
+  addiction_level: Addiction;
+  addiction_probabilities: Record<Addiction, number>;
+  mental_health_score: number;
+  evaluation: {
+    classification: {
+      accuracy: number;
+      f1_macro: number;
+    };
+    regression: {
+      mae: number;
+      rmse: number;
+      r2: number;
+    };
+  };
+  model_metadata: {
+    trained_at: string;
+    train_rows: number;
+    test_rows: number;
+    target_definition_audit: {
+      ranges_are_non_overlapping: boolean;
+    };
+  };
+}
+
+async function requestFinalPrediction(profile: SimulatorProfile): Promise<FinalModelPrediction> {
+  const response = await fetch("/ml/predict", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      age: profile.age,
+      gender: profile.gender,
+      country: profile.country,
+      primary_platform: profile.platform,
+      purpose: profile.purpose,
+      num_platforms_used: profile.platformsUsed,
+      daily_usage_hours: profile.dailyUsage,
+      avg_session_minutes: profile.sessionMinutes,
+      night_usage: profile.nightUsage,
+      screen_time_before_sleep: profile.beforeSleep,
+    }),
+  });
+  let payload: FinalModelPrediction | { detail?: string };
+  try {
+    payload = (await response.json()) as FinalModelPrediction | { detail?: string };
+  } catch {
+    if (response.status === 502) {
+      throw new Error(
+        "Layanan model belum berjalan. Buka terminal di folder ml, lalu jalankan: python -m uvicorn model_service:app --host 127.0.0.1 --port 8000",
+      );
+    }
+    throw new Error(`Layanan model memberi respons tidak valid (${response.status}).`);
+  }
+  if (!response.ok) {
+    const message = "detail" in payload ? payload.detail : undefined;
+    throw new Error(message || `Prediksi gagal (${response.status}).`);
+  }
+  return payload as FinalModelPrediction;
+}
+
+function FinalModelResultContent({
+  result,
+  activeWhatIfs,
+  onToggleWhatIf,
+  comparisons,
+  ranking,
+  whatIfLoading,
+  whatIfError,
+}: {
+  result: FinalModelPrediction;
+  activeWhatIfs: WhatIfKey[];
+  onToggleWhatIf: (key: WhatIfKey) => void;
+  comparisons: { option: (typeof whatIfOptions)[number]; result: FinalModelPrediction }[];
+  ranking: { label: string; delta: number }[];
+  whatIfLoading: boolean;
+  whatIfError: string | null;
+}) {
+  const score = result.mental_health_score;
+  const scorePosition = Math.max(0, Math.min(100, score * 10));
+  const probabilities = addictions.map((level) => ({
+    level,
+    value: result.addiction_probabilities[level],
+  }));
+
+  return (
+    <>
+      <div className="score-range-block">
+        <strong>{score.toFixed(1)} / 10</strong>
+        <p>Prediksi skor kesehatan mental (skala 0–10, lebih tinggi lebih baik)</p>
+        <div
+          className="score-gradient"
+          aria-label={`Prediksi skor kesehatan mental ${score.toFixed(1)} dari 10`}
+        >
+          <i className="median-dot" style={{ left: `${scorePosition}%` }} />
+        </div>
+        <div className="score-scale">
+          <span>0 · rendah</span>
+          <span>5 · tengah</span>
+          <span>10 · tinggi</span>
+        </div>
+        {(score < 0 || score > 10) && (
+          <p className="few-notice" role="note">
+            Nilai regresi berada di luar skala data 0–10; penanda pada grafik dibatasi ke ujung skala.
+          </p>
+        )}
+      </div>
+      <div className={`habit-level ${result.addiction_level.toLowerCase()}`}>
+        <Icon
+          name={
+            result.addiction_level === "Low"
+              ? "heart"
+              : result.addiction_level === "Medium"
+                ? "info"
+                : "alert"
+          }
+          size={16}
+        />
+        <div>
+          <strong>Tingkat adiksi yang diprediksi: {labelId(result.addiction_level)}</strong>
+          <span>Hasil Random Forest untuk profil yang Anda masukkan</span>
+        </div>
+      </div>
+      <div className="sim-dot-block">
+        <div className="sim-subhead">
+          <strong>Probabilitas kategori dari Random Forest</strong>
+          <span>Untuk profil ini</span>
+        </div>
+        <div className="model-probability-list">
+          {probabilities.map(({ level, value }) => (
+            <div className="model-probability-row" key={level}>
+              <span>{labelId(level)}</span>
+              <i
+                className="model-probability-track"
+                role="meter"
+                aria-label={`Probabilitas kategori ${labelId(level)}`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(value * 100)}
+              >
+                <b className={level.toLowerCase()} style={{ width: `${value * 100}%` }} />
+              </i>
+              <strong>{(value * 100).toFixed(1)}%</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+      <WhatIfPanel
+        result={result}
+        activeWhatIfs={activeWhatIfs}
+        onToggleWhatIf={onToggleWhatIf}
+        comparisons={comparisons}
+        ranking={ranking}
+        loading={whatIfLoading}
+        error={whatIfError}
+      />
+      <div className="friendly-copy">
+        <Icon name="sparkle" size={16} />
+        <p>
+          Gunakan hasil ini sebagai informasi umum, bukan penilaian kesehatan Anda. Jika Anda merasa
+          kewalahan, berbicara dengan orang tepercaya atau tenaga profesional dapat membantu.
+        </p>
+      </div>
+    </>
+  );
+}
 
 type WhatIfKey = "night" | "oneHour" | "twoHours" | "sleep" | "platform" | "education";
 
@@ -1913,90 +2078,229 @@ function ComparisonCard({
   after,
 }: {
   label: string;
-  before: SimulationResult;
-  after: SimulationResult;
+  before: FinalModelPrediction;
+  after: FinalModelPrediction;
 }) {
-  const delta = after.median - before.median;
+  const delta = after.mental_health_score - before.mental_health_score;
   return (
     <div className="comparison-card">
       <div className="comparison-title">
         <span>{label}</span>
         <b className={delta >= 0 ? "good" : "bad"}>
           <Icon name="trend" size={13} /> {delta >= 0 ? "+" : ""}
-          {delta.toFixed(1)}
+          {delta.toFixed(2)}
         </b>
       </div>
       <div className="before-after">
-        {[
-          ["Sebelum", before],
-          ["Sesudah", after],
-        ].map(([name, value]) => {
-          const typed = value as SimulationResult;
-          return (
-            <div key={name as string}>
-              <small>{name as string}</small>
-              <strong>{typed.median.toFixed(1)}</strong>
-              <span>
-                Rentang {typed.rangeLow.toFixed(1)}–{typed.rangeHigh.toFixed(1)}
-              </span>
-              <StatusPill status={typed.likelyLevel} />
-              <em>{percentage(typed.split.high, typed.neighborCount).toFixed(0)}% Tinggi</em>
-            </div>
-          );
-        })}
+        <div>
+          <small>Sebelum</small>
+          <strong>{before.mental_health_score.toFixed(2)}</strong>
+          <StatusPill status={before.addiction_level} />
+        </div>
+        <div>
+          <small>Sesudah</small>
+          <strong>{after.mental_health_score.toFixed(2)}</strong>
+          <StatusPill status={after.addiction_level} />
+        </div>
       </div>
     </div>
   );
 }
 
+function WhatIfPanel({
+  result,
+  activeWhatIfs,
+  onToggleWhatIf,
+  comparisons,
+  ranking,
+  loading,
+  error,
+}: {
+  result: FinalModelPrediction;
+  activeWhatIfs: WhatIfKey[];
+  onToggleWhatIf: (key: WhatIfKey) => void;
+  comparisons: { option: (typeof whatIfOptions)[number]; result: FinalModelPrediction }[];
+  ranking: { label: string; delta: number }[];
+  loading: boolean;
+  error: string | null;
+}) {
+  return (
+    <GlassCard className="what-if-panel">
+      <div className="card-head">
+        <div>
+          <h2>Bagaimana Jika?</h2>
+          <p>Setiap perubahan dihitung ulang oleh kedua model final.</p>
+        </div>
+      </div>
+      <div className="what-if-toggles">
+        {whatIfOptions.map((option) => (
+          <button
+            type="button"
+            key={option.key}
+            className={activeWhatIfs.includes(option.key) ? "active" : ""}
+            aria-pressed={activeWhatIfs.includes(option.key)}
+            onClick={() => onToggleWhatIf(option.key)}
+          >
+            <span>{activeWhatIfs.includes(option.key) ? "Aktif" : "+"}</span> {option.label}
+          </button>
+        ))}
+      </div>
+      {loading && (
+        <div className="what-if-empty" role="status">
+          Model sedang menghitung profil pembanding...
+        </div>
+      )}
+      {error && (
+        <div className="few-notice" role="alert">
+          <Icon name="alert" size={15} /> {error}
+        </div>
+      )}
+      {!!comparisons.length && (
+        <div className="comparison-grid">
+          {comparisons.map(({ option, result: after }) => (
+            <ComparisonCard
+              key={option.key}
+              label={option.label}
+              before={result}
+              after={after}
+            />
+          ))}
+        </div>
+      )}
+      {!!ranking.length && (
+        <div className="impact-section">
+          <div className="sim-subhead">
+            <strong>Perubahan prediksi skor</strong>
+            <span>Selisih skor Linear Regression dari profil saat ini</span>
+          </div>
+          <div className="impact-chart">
+            {ranking.map((item) => {
+              const max = Math.max(...ranking.map((entry) => Math.abs(entry.delta)), 0.01);
+              return (
+                <div key={item.label}>
+                  <span>{item.label}</span>
+                  <i>
+                    <b
+                      className={item.delta >= 0 ? "positive" : "negative"}
+                      style={{ width: `${Math.max(5, (Math.abs(item.delta) / max) * 100)}%` }}
+                    />
+                  </i>
+                  <strong className={item.delta >= 0 ? "good" : "bad"}>
+                    {item.delta >= 0 ? "+" : ""}
+                    {item.delta.toFixed(2)}
+                  </strong>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {!activeWhatIfs.length && (
+        <div className="what-if-empty">Pilih perubahan profil untuk membandingkan prediksi.</div>
+      )}
+      <div className="sample-note">
+        <Icon name="info" size={13} /> Perubahan profil adalah simulasi model, bukan bukti sebab-akibat.
+      </div>
+    </GlassCard>
+  );
+}
+
 export function SimulatorPage() {
-  const { filtered } = useFilters();
-  const { summaries, samples } = useDashboardData();
   const [profile, setProfile] = useState<SimulatorProfile>(defaultProfile);
-  const [result, setResult] = useState<SimulationResult | null>(null);
+  const [result, setResult] = useState<FinalModelPrediction | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [activeWhatIfs, setActiveWhatIfs] = useState<WhatIfKey[]>([]);
+  const [whatIfResults, setWhatIfResults] = useState<
+    Partial<Record<WhatIfKey, FinalModelPrediction>>
+  >({});
+  const [whatIfLoading, setWhatIfLoading] = useState(false);
+  const [whatIfError, setWhatIfError] = useState<string | null>(null);
   const runId = useRef(0);
 
-  const execute = (nextProfile = profile) => {
+  const execute = async (nextProfile = profile) => {
     const id = ++runId.current;
     setLoading(true);
-    setError(false);
-    window.setTimeout(() => {
-      if (id !== runId.current) return;
-      try {
-        setResult(runSimulation(nextProfile, filtered));
-      } catch {
-        setError(true);
-      } finally {
-        setLoading(false);
+    setError(null);
+    try {
+      const prediction = await requestFinalPrediction(nextProfile);
+      if (id === runId.current) setResult(prediction);
+    } catch (predictionError) {
+      if (id === runId.current) {
+        setError(
+          predictionError instanceof Error
+            ? predictionError.message
+            : "Tidak dapat menghubungi layanan model.",
+        );
       }
-    }, 500);
+    } finally {
+      if (id === runId.current) setLoading(false);
+    }
   };
 
   const update = (next: SimulatorProfile) => {
     setProfile(next);
     setResult(null);
     setLoading(false);
-    setError(false);
+    setError(null);
     runId.current += 1;
   };
-  const comparisons = activeWhatIfs.map((key) => {
-    const option = whatIfOptions.find((item) => item.key === key)!;
-    return { option, result: runSimulation(option.apply(profile), filtered) };
+  useEffect(() => {
+    if (!result || !activeWhatIfs.length) {
+      setWhatIfResults({});
+      setWhatIfLoading(false);
+      setWhatIfError(null);
+      return;
+    }
+
+    let active = true;
+    setWhatIfLoading(true);
+    setWhatIfError(null);
+    Promise.all(
+      activeWhatIfs.map(async (key) => {
+        const option = whatIfOptions.find((item) => item.key === key);
+        if (!option) throw new Error(`Opsi simulasi '${key}' tidak ditemukan.`);
+        return [key, await requestFinalPrediction(option.apply(profile))] as const;
+      }),
+    )
+      .then((entries) => {
+        if (active) setWhatIfResults(Object.fromEntries(entries));
+      })
+      .catch((comparisonError: unknown) => {
+        if (active) {
+          setWhatIfError(
+            comparisonError instanceof Error
+              ? comparisonError.message
+              : "Tidak dapat menghitung simulasi pembanding.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setWhatIfLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activeWhatIfs, profile, result]);
+
+  const comparisons = activeWhatIfs.flatMap((key) => {
+    const option = whatIfOptions.find((item) => item.key === key);
+    const prediction = whatIfResults[key];
+    return option && prediction ? [{ option, result: prediction }] : [];
   });
-  const ranking = result
-    ? whatIfOptions
-        .map((option) => {
-          const after = runSimulation(option.apply(profile), filtered);
-          return { label: option.label, delta: after.median - result.median };
-        })
-        .sort((a, b) => b.delta - a.delta)
-    : [];
+  const ranking =
+    result && comparisons.length === activeWhatIfs.length
+      ? comparisons
+          .map(({ option, result: prediction }) => ({
+            label: option.label,
+            delta: prediction.mental_health_score - result.mental_health_score,
+          }))
+          .sort((left, right) => right.delta - left.delta)
+      : [];
   const methodSummary =
-    "Pencocokan tetangga terdekat berbobot (K = 100) pada dataset. Fitur numerik dinormalisasi min-maks, lalu digabungkan dengan penalti perbedaan kategori. Hasil bersifat deskriptif dan bukan diagnosis medis.";
+    "Simulator memakai Random Forest Classifier untuk memprediksi addiction_level dan Linear Regression untuk memprediksi mental_health_score. Kedua model dilatih dari 80% data dan dievaluasi pada 20% data uji. Hasil bersifat informatif dan bukan diagnosis medis.";
 
   return (
     <DataPage
@@ -2017,7 +2321,7 @@ export function SimulatorPage() {
             className="sim-form"
             onSubmit={(event) => {
               event.preventDefault();
-              execute();
+              void execute();
             }}
           >
             <SliderField
@@ -2034,6 +2338,13 @@ export function SimulatorPage() {
               values={["Male", "Female"]}
               value={profile.gender}
               onChange={(gender) => update({ ...profile, gender })}
+            />
+            <ChipGroup<Country>
+              label="Negara"
+              help="Negara profil yang akan dikirim ke model."
+              values={countries}
+              value={profile.country}
+              onChange={(country) => update({ ...profile, country })}
             />
             <ChipGroup<Platform>
               label="Platform utama"
@@ -2123,7 +2434,8 @@ export function SimulatorPage() {
             />
             <div className="sim-actions">
               <button className="primary-button" type="submit">
-                <Icon name="sparkle" size={15} /> Jalankan Simulasi
+                <Icon name="sparkle" size={15} />
+                {loading ? "Menghitung..." : "Jalankan Simulasi"}
               </button>
             </div>
           </form>
@@ -2133,7 +2445,7 @@ export function SimulatorPage() {
           <div className="card-head">
             <div>
               <h2>Hasil Perkiraan</h2>
-              <p>Pola dari profil terdekat dalam sampel ini.</p>
+              <p>Prediksi model dari profil yang Anda masukkan.</p>
             </div>
             <button className="ghost-button" onClick={() => setDrawer(true)}>
               <Icon name="settings" size={14} /> Detail Ilmiah
@@ -2142,91 +2454,28 @@ export function SimulatorPage() {
           {loading ? (
             <SimulatorSkeleton />
           ) : error ? (
-            <ErrorState retry={() => execute()} />
+            <ErrorState retry={() => void execute()} message={error} />
           ) : result ? (
-            <ResultContent result={result} profile={profile} />
+            <FinalModelResultContent
+              result={result}
+              activeWhatIfs={activeWhatIfs}
+              onToggleWhatIf={(key) =>
+                setActiveWhatIfs((current) =>
+                  current.includes(key)
+                    ? current.filter((item) => item !== key)
+                    : [...current, key],
+                )
+              }
+              comparisons={comparisons}
+              ranking={ranking}
+              whatIfLoading={whatIfLoading}
+              whatIfError={whatIfError}
+            />
           ) : (
             <SimulatorEmptyState />
           )}
         </GlassCard>
       </div>
-
-      <GlassCard className="what-if-panel">
-        <div className="card-head">
-          <div>
-            <h2>Bagaimana Jika?</h2>
-            <p>Lihat pengaruh perubahan kecil terhadap perkiraan.</p>
-          </div>
-        </div>
-        <div className="what-if-toggles">
-          {whatIfOptions.map((option) => (
-            <button
-              type="button"
-              key={option.key}
-              className={activeWhatIfs.includes(option.key) ? "active" : ""}
-              aria-pressed={activeWhatIfs.includes(option.key)}
-              disabled={!result}
-              onClick={() =>
-                setActiveWhatIfs((current) =>
-                  current.includes(option.key)
-                    ? current.filter((key) => key !== option.key)
-                    : [...current, option.key],
-                )
-              }
-            >
-              <span>{activeWhatIfs.includes(option.key) ? "Aktif" : "+"}</span> {option.label}
-            </button>
-          ))}
-        </div>
-        {!result ? (
-          <div className="what-if-empty">Jalankan simulasi untuk menjelajahi perubahan.</div>
-        ) : (
-          <>
-            {!!comparisons.length && (
-              <div className="comparison-grid">
-                {comparisons.map(({ option, result: after }) => (
-                  <ComparisonCard
-                    key={option.key}
-                    label={option.label}
-                    before={result}
-                    after={after}
-                  />
-                ))}
-              </div>
-            )}
-            <div className="impact-section">
-              <div className="sim-subhead">
-                <strong>Peringkat dampak</strong>
-                <span>Perubahan skor median, terbesar lebih dahulu</span>
-              </div>
-              <div className="impact-chart">
-                {ranking.map((item) => {
-                  const max = Math.max(...ranking.map((entry) => Math.abs(entry.delta)), 0.01);
-                  return (
-                    <div key={item.label}>
-                      <span>{item.label}</span>
-                      <i>
-                        <b
-                          className={item.delta >= 0 ? "positive" : "negative"}
-                          style={{ width: `${Math.max(5, (Math.abs(item.delta) / max) * 100)}%` }}
-                        />
-                      </i>
-                      <strong className={item.delta >= 0 ? "good" : "bad"}>
-                        {item.delta >= 0 ? "+" : ""}
-                        {item.delta.toFixed(2)}
-                      </strong>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </>
-        )}
-        <div className="sample-note">
-          <Icon name="info" size={13} /> Perbedaan mencerminkan pola dalam sampel, bukan dampak yang
-          pasti bagi setiap individu.
-        </div>
-      </GlassCard>
 
       <div className="sim-disclaimer">
         <Icon name="heart" size={15} />
@@ -2237,71 +2486,60 @@ export function SimulatorPage() {
       </div>
 
       <Drawer open={drawer} title="Detail Ilmiah" onClose={() => setDrawer(false)}>
-        <span className="prototype-badge">Data sampel aktual</span>
-        <h3>Ringkasan metode</h3>
+        <span className="prototype-badge">Model final · MySQL 1 juta baris</span>
+        <h3>Model yang digunakan</h3>
         <p>{methodSummary}</p>
-        <h3>Bobot fitur</h3>
-        <div className="weight-table">
-          {Object.entries(simulatorWeights).map(([name, weight]) => (
-            <div key={name}>
-              <span>
-                {
-                  {
-                    dailyUsage: "Penggunaan harian",
-                    beforeSleep: "Waktu sebelum tidur",
-                    platformsUsed: "Jumlah platform",
-                    nightUsage: "Penggunaan malam",
-                    sessionMinutes: "Durasi sesi",
-                    age: "Usia",
-                    platform: "Platform",
-                    purpose: "Tujuan",
-                    country: "Negara",
-                    gender: "Gender",
-                  }[name]
-                }
-              </span>
-              <b>{weight.toFixed(2)}</b>
-            </div>
-          ))}
-        </div>
-        <h3>Fakta dataset</h3>
+        <h3>Pembagian dan evaluasi data</h3>
         <dl className="method-list">
           <div>
-            <dt>Total data</dt>
+            <dt>Data training</dt>
             <dd>
-              {summaryValue<{ total_respondents: number }>(summaries, "overview")
-                .total_respondents.toLocaleString("id-ID")}
+              {result?.model_metadata.train_rows.toLocaleString("id-ID") ?? "800.000"} baris (80%)
             </dd>
           </div>
           <div>
-            <dt>Ukuran sampel</dt>
-            <dd>{samples.length.toLocaleString("id-ID")}</dd>
+            <dt>Data testing</dt>
+            <dd>
+              {result?.model_metadata.test_rows.toLocaleString("id-ID") ?? "200.000"} baris (20%)
+            </dd>
           </div>
           <div>
-            <dt>Data tersaring digunakan</dt>
-            <dd>{filtered.length}</dd>
+            <dt>Akurasi classifier</dt>
+            <dd>
+              {result ? `${(result.evaluation.classification.accuracy * 100).toFixed(2)}%` : "-"}
+            </dd>
           </div>
           <div>
-            <dt>Tetangga terdekat</dt>
-            <dd>Hingga 100</dd>
+            <dt>F1 macro classifier</dt>
+            <dd>
+              {result ? `${(result.evaluation.classification.f1_macro * 100).toFixed(2)}%` : "-"}
+            </dd>
           </div>
           <div>
-            <dt>Tanggal dibuat</dt>
-            <dd>Oktober 2025</dd>
+            <dt>MAE regresi</dt>
+            <dd>{result?.evaluation.regression.mae.toFixed(3) ?? "-"}</dd>
+          </div>
+          <div>
+            <dt>RMSE regresi</dt>
+            <dd>{result?.evaluation.regression.rmse.toFixed(3) ?? "-"}</dd>
+          </div>
+          <div>
+            <dt>R² regresi</dt>
+            <dd>{result?.evaluation.regression.r2.toFixed(3) ?? "-"}</dd>
           </div>
         </dl>
-        <h3>Definisi metrik</h3>
+        <h3>Preprocessing</h3>
         <ul className="method-points">
-          <li>Rentang skor adalah persentil ke-25 hingga ke-75.</li>
-          <li>Keyakinan memakai jarak rata-rata, sebaran skor, dan ukuran sampel.</li>
-          <li>Persentase kecocokan adalah (1 − jarak rata-rata) × 100.</li>
+          <li>Nilai numerik yang hilang diimputasi dengan median training.</li>
+          <li>Kategori diimputasi dari modus training dan di-one-hot encode.</li>
+          <li>Semua preprocessing di-fit hanya pada data training untuk mencegah leakage.</li>
+          <li>addiction_level dan mental_health_score tidak dimasukkan sebagai fitur input.</li>
         </ul>
         <h3>Keterbatasan</h3>
         <ul className="method-points">
-          <li>Korelasi bukan hubungan sebab-akibat.</li>
-          <li>Perkiraan kNN dihitung dari sampel acak, bukan seluruh baris mentah.</li>
-          <li>Beberapa nilai mungkin terpotong pada batas minimum.</li>
-          <li>Metode ini belum divalidasi secara klinis.</li>
+          <li>Rentang daily_usage_hours pada data terpisah menurut label addiction_level.</li>
+          <li>Akurasi tinggi dapat mencerminkan aturan label dataset, bukan prediksi klinis.</li>
+          <li>Hasil model tidak menggantikan penilaian atau diagnosis profesional.</li>
         </ul>
         <button
           className="primary-button copy-method"

@@ -3,6 +3,7 @@ import {
   percentile,
   stdDev as calculateStdDev,
   type Addiction,
+  type Country,
   type Gender,
   type Platform,
   type Purpose,
@@ -12,6 +13,7 @@ import {
 export interface SimulatorProfile {
   age: number;
   gender: Gender;
+  country: Country;
   platform: Platform;
   purpose: Purpose;
   dailyUsage: number;
